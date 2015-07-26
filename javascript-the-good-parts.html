@@ -1,0 +1,199 @@
+<html>
+  <head>
+    <meta charset="utf-8"/>
+  </head>
+  <body id="body">
+    <h1>Javascript!</h1>
+    <ul>
+      <li>Hi</li>
+    <ul>
+<script>
+// Prototype inheritance example (see more below)
+var Foo = {
+  a: 'Hello, World!',
+  getA: function() {
+    return this.a;
+  },
+  getAA: function() {
+    // Inner function does not share access to `this`
+    var that = this;
+    var aa = function() {
+      return that.a;
+    }
+    return aa();
+  },
+  getAAapply: function() {
+    // Inner function does not share access to `this`
+    var aa = function() {
+      return this.a;
+    }
+    return aa.apply(this);
+  }
+};
+
+// Create a constructor function named Bar
+var Bar = function() {};
+Bar.prototype = Foo;
+Bar.notInPrototype = 'oops';
+
+var baz = new Bar();
+
+var baz2 = new Bar();
+baz2.a = 'modified';
+console.log(baz.a);
+// Ouputs: Hello, World
+
+console.log(baz2.a);
+// Outputs: Modified
+
+console.log(baz.getA());
+// Ouputs: Hello, World
+
+console.log(baz.getAA());
+// Ouputs: Hello, World
+
+console.log(baz.getAAapply());
+// Ouputs: Hello, World
+
+console.log(baz.notInPrototype); 
+// Outputs: undefined
+
+// see the prototype
+console.log(baz.__proto__);
+// Outputs: Object { a: "Hello, World!", getA: Foo.getA(), getAA: Foo.getAA(), getAAapply: Foo.getAAapply() }
+
+
+// Functions
+
+var f1 = function(a, b) {
+  console.log(this);
+  console.log(arguments);
+  console.log(a);
+  console.log(b);
+}
+
+f1(1, 2);
+// outputs: Arguments { 0: 1, 1: 2, 2 more… }
+f1(3);
+// outputs: Arguments { 0: 3, 2 more… }
+f1(4,5,6,7);
+// outputs: Arguments { 0: 4, 1: 5, 2: 6, 3: 7, 2 more… }
+
+
+// Augmenting a type
+String.prototype.trim = function() {
+  return this.replace(/^\s+|\s+$/g, '');
+};
+
+console.log("    ABCDEFG   HIJK   ".trim());
+
+// Recursion
+var walk_the_DOM = function(node, func) {
+  func(node);
+  node = node.firstChild;
+  while (node) {
+    walk_the_DOM(node, func);
+    node = node.nextSibling;
+  }
+}
+
+var body = document.getElementById('body');
+walk_the_DOM(body, function(node) {
+  console.log(node.nodeName);
+});
+
+// Factorial from the book
+var factorial = function(i, a) {
+  a = a || 1;
+  if (i < 2) {
+    return a;
+  }
+  return factorial(i - 1, a * i);
+};
+// Factorial by Richard
+var factorial = function(i) {
+  if(i === 1) {
+    return 1;
+  } else {
+    return i * factorial(i - 1)
+  }
+};
+console.log(factorial(4));
+
+// Closure used for scope
+var myObject = function () { 
+  var value = 0;
+  return {
+      increment: function (inc) {
+      value += typeof inc === 'number' ? inc : 1;
+    },
+    getValue: function () { 
+      return value;
+    } 
+  };
+}(); // Notice params at end
+
+// Add a method to a type with a closure
+String.prototype.deentityify = function() {
+  var entities = {
+    lt: '<',
+    gt: '>',
+    quot: '"',
+  };
+  return function() {
+    return this.replace(/&([^&;]+);/g,
+      function (a, b) {
+        var r = entities[b];
+        return typeof r === 'string' ? r : a;
+      }
+    );
+  };
+}();
+console.log('&lt;&quot;&gt;'.deentityify());
+
+// Memoization (by Richard)
+var memoize = function(func) {
+  var memo = {};
+  return function() {
+    // @todo create actual key based on all arguments
+    arguments_key = arguments[0];
+    if( ! memo.hasOwnProperty(arguments_key)) {
+      memo[arguments_key] = func.apply(null, arguments);
+    }
+    return memo[arguments_key]
+  };
+};
+var DateM = memoize(Date);
+console.log(DateM());
+
+// # Inheritance chapter
+
+// ## Crude inheritance example (not recommended?)
+
+var Mammal = function(name) {
+  this.name = name;
+};
+Mammal.prototype.get_name = function() {
+  return this.name;
+};
+
+var myMammal = new Mammal('Orangatan');
+var name = myMammal.get_name();
+
+// inherit
+
+var Cat = function(name) {
+  this.name = 'Cat constructor?';
+  // how to call parent?
+};
+// Replace Cat.prototype with a new instance of Mammal
+// (taken from Javascript the good parts)
+Cat.prototype = new Mammal();
+
+var cat = new Cat('pooper');
+console.log(cat.get_name());
+
+
+</script>
+  </body>
+</html>
