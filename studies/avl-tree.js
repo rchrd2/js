@@ -54,7 +54,7 @@ AvlTree.prototype = {
     console.assert(parentNode.right !== parentNode, "Found a glitch parentNode.right is parentNode!" + String(parentNode));
     console.assert(parentNode.left !== parentNode, "Found a glitch parentNode.left is parentNode!" + String(parentNode));
     //console.log('insertNode', parentNode.val, val);
-    if (val <= parentNode.val) {
+    if (val < parentNode.val) {
       if (parentNode.left === null) {
         console.log('left');
         var newnode = new AvlTreeNode(val);
@@ -106,14 +106,11 @@ AvlTree.prototype = {
 
           // LEFT rotate P
           this.leftRotate(P);
-          console.assert(P !== P.right, 'whattt');
-
         } else {
           // perform single LEFT rotation
           //console.log('SINGLE leftRotate(P)', P.val);
           //console.log('BEFORE', this.toString());
           this.leftRotate(P);
-          console.assert(P !== P.right, 'whattt');
           //console.log('AFTER', this.toString());
         }
       } else if (balance >= 1) {
@@ -136,11 +133,8 @@ AvlTree.prototype = {
           this.rightRotate(P);
         }
       }
-      console.assert(P !== P.right, 'whattt2');
       P = P.parent;
     } while (P != null);
-    //console.assert(Math.abs(this.nodeBalanceFactor(P)) < 2, "balance factor < 2");
-
   },
 
 
@@ -181,11 +175,6 @@ AvlTree.prototype = {
     var bTempVal = b.val;
     
     var c = b.right;
-    
-    console.assert(a !== b);
-    console.assert(a !== c);
-    console.assert(c !== a);
-    
 
     // A becomes B
     a.left = b;
@@ -212,12 +201,6 @@ AvlTree.prototype = {
     b.parent = a;
     
     // C stays c
-
-    
-    console.assert(!a || a !== a.right, "the f");
-    console.assert(!b || b !== b.right, "the f");
-    console.assert(!c || c !== c.right, "the f");
-
   },
   
 
@@ -258,10 +241,6 @@ AvlTree.prototype = {
     
     var a = b.left;
 
-    console.assert(!a || a !== a.right, "the f a before");
-    console.assert(!b || b !== b.right, "the f b before");
-    console.assert(!c || c !== c.right, "the f c before");
-
     // b's right becomes c's left
     
     // A stays c
@@ -288,15 +267,6 @@ AvlTree.prototype = {
       b.right.parent = b;
     }
     b.parent = c;
-
-    
-    //console.log('rightRotate', 'AFTER', c.toString(), String(c.left), String(c.right));
-    
-    //return c;
-    console.assert(c != c.right, "the f");
-    console.assert(!a || a !== a.right, "the f a");
-    console.assert(!b || b !== b.right, "the f b");
-    console.assert(!c || c !== c.right, "the f c");
   },
   
   /** 
@@ -424,6 +394,52 @@ AvlTree.prototype = {
   },
   
   /**
+   * Helper that prints graphviz compatable output (cool!)
+   */
+  graphviz: function() {
+    //digraph BST {
+    //15 -> 6
+    //15 -> 18
+    //18 -> 17
+    //}
+    
+    var template = "digraph BST { {{DATA}} }";
+    var data_points = [];
+    var queue = [];
+    var null_count = 0;
+    if ( ! this.isEmpty()) {
+      //data_points.push("Tree -> " + this.root.val);
+      queue.push(this.root);
+      var node;
+      while (node = queue.shift()) {
+        var label = [
+              node.val, 
+              "[" + this.nodeBalanceFactor(node) + "]"
+            ].join(" ");
+        data_points.push(node.val + " [label=\"" + label + "\" ];");
+        if (node.left) {
+          data_points.push(node.val + " -> " + node.left.val + ";");
+          queue.push(node.left);
+        } else {
+          data_points.push("null" + null_count + " [shape=point];")
+          data_points.push(node.val + " -> null" + null_count + ";");
+          null_count = null_count + 1;
+        }
+        if (node.right) {
+          data_points.push(node.val + " -> " + node.right.val + ";");
+          queue.push(node.right);
+        } else {
+          data_points.push("null" + null_count + " [shape=point];")
+          data_points.push(node.val + " -> null" + null_count + ";");
+          null_count = null_count + 1;
+        }
+      }
+    }
+    var output = template.replace("{{DATA}}", data_points.join(" "));
+    return output;
+  },
+
+  /**
    * Helper to check if balanced
    */
   isBalanced: function() {
@@ -530,14 +546,25 @@ console.assert(tree2.isBalanced() === true, "Assert tree is balanced");
 
 
 var randomValues = [];
-var size3 = 1000;
+var size3 = 50;
 for (var i = 0; i < size3; i++) {
-  randomValues.push(Math.floor(Math.random() * 10000));
+  var newVal;
+  // Generate a unique value
+  do {
+    newVal = Math.floor(Math.random() * 10000);
+  } while (randomValues.indexOf(newVal) >= 0);
+  randomValues.push(newVal);
 }
 var tree3 = createAvlTreeFromArray(randomValues);
 console.assert(tree3.size() == size3, "Tree size is not" + size3 + ":" + tree3.size());
 
 // I keep getting a -2 (off by one)
+console.log('--------');
+console.log(tree3.graphviz());
+console.log('--------');
+
 console.assert(tree3.isBalanced() === true, "Assert tree is balanced");
+
+
 
 /// 
