@@ -243,10 +243,16 @@ props = null;
  * Simply utilizes a max heap and runs extractMax() over and over again
  * Even still, it is efficient 
  *
+ * On wikipedia it says:
+ * "Heapsort is an in-place algorithm, but it is not a stable sort."
+ *
  * The way it's implemented here, it requires an extra array. I believe there's 
  * a way to do it all in place using the array itself as the data source for the
  * max-heap. 
  *
+ * TODO modify the maxheap to take in a source array to make this in place
+ *
+ * Some useful slides:
  * http://www.cs.mcgill.ca/~cs203/lectures/lecture10/sld028.htm
  */
 var HeapSort = function(ar) {

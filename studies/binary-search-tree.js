@@ -140,6 +140,7 @@ BinarySearchTree.prototype = {
   
   /**
    * Recursive height method
+   * TODO A tree consisting of only a root node has a height of 0. 
    */
   height: function() {
     var nodeHeight = function(node) {

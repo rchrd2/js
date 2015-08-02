@@ -24,6 +24,7 @@ BinaryTree.prototype = {
   
   /**
    * Get the H of the tree
+   * TODO A tree consisting of only a root node has a height of 0. 
    */
   height: function() {
     return this._getNodeHeight(this.root);
