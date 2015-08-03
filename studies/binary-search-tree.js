@@ -8,8 +8,8 @@
  *   - https://gist.github.com/mycodeschool/9465a188248b624afdbf
  */
 
-var BinarySearchTreeNode = function(value, left, right) {
-  this.value = value || null;
+var BinarySearchTreeNode = function(val, left, right) {
+  this.val = val || null;
   this.left = left || null;
   this.right = right || null;
   // Note you can have the parent as well.
@@ -24,68 +24,80 @@ var BinarySearchTree = function(root) {
 BinarySearchTree.prototype = {
   constructor: BinarySearchTree,
   /**
-   * Add adds a value 
+   * Add adds a val 
    */
-  insert: function(value) {
-    var insertHelper = function(node, value) {
-      if (value < node.value) {
+  insert: function(val) {
+    var insertHelper = function(node, val) {
+      if (val < node.val) {
         if (node.left === null) {
-          node.left = new BinarySearchTreeNode(value);
+          node.left = new BinarySearchTreeNode(val);
         } else {
-          insertHelper(node.left, value);
+          insertHelper(node.left, val);
         }
-      } else if (value > node.value) {
+      } else if (val > node.val) {
         if (node.right === null) {
-          node.right = new BinarySearchTreeNode(value);
+          node.right = new BinarySearchTreeNode(val);
         } else {
-          insertHelper(node.right, value);
+          insertHelper(node.right, val);
         }
-      } else if (value === node.value) {
+      } else if (val === node.val) {
         return;
       }
     };
     
     if (this.root === null) {
-      this.root = new BinarySearchTreeNode(value);
+      this.root = new BinarySearchTreeNode(val);
     } else {
-      insertHelper(this.root, value);
+      insertHelper(this.root, val);
     }
   },
 
-  remove: function(value) {
-    var removeNode = function(node, value) {
-      if (node === null) {
-        return null;
-      } else if (value < node.value) {
-        var result = removeNode(node.left, value);
-        node.left = result;
-      } else if (value > node.value) {
-        var result = removeNode(node.right, value);
-        node.right = result;
-      } else {
-        // Wohoo... I found you, Get ready to be deleted
-        // Case 1: No child
-        if (node.left === null && node.right === null) {
-          node = null;
-        }
-        
-        // Case 2: One Child
-        else if (node.right !== null) {
-          node = node.right;
-        } else if (node.left !== null) {
-          node = node.left;
-        }
-        
-        // Case 3: Two Children
-        else {
-          var temp_node = this.findMin(node.right);
-          node.value = temp_node.value;
-          node.right = removeNode(newnode.right, temp_node.value);
-        }
+  /**
+   * Remove node (helper function. See bst.remove)
+   */
+  removeNode: function(node, val) {
+    
+    if (node === null) {
+      return null;
+    } else if (val < node.val) {
+      var result = this.removeNode(node.left, val);
+      node.left = result;
+    } else if (val > node.val) {
+      var result = this.removeNode(node.right, val);
+      node.right = result;
+    } else {
+      // Wohoo... I found you, Get ready to be deleted
+      var is_root = node == this.root;
+
+      // Case 1: No child
+      if (node.left === null && node.right === null) {
+        node = null;
       }
-      return node;
-    };
-    return removeNode(this.root, value);
+      
+      // Case 2: One Child
+      else if (node.right !== null) {
+        node = node.right;
+      } else if (node.left !== null) {
+        node = node.left;
+      }
+      
+      // Case 3: Two Children
+      else {
+        var temp_node = this.findMin(node.right);
+        node.val = temp_node.val;
+        node.right = this.removeNode(newnode.right, temp_node.val);
+      }
+      
+      if (is_root) {
+        this.root = node;
+      }
+    }
+    
+    return node;
+  },
+
+  remove: function(val) {
+    return this.removeNode(this.root, val);
   },
   
   /**
@@ -119,20 +131,20 @@ BinarySearchTree.prototype = {
   /**
    * Divide and conquer search
    */
-  search: function(value) {
-    var searchNode = function(node, value) {
+  search: function(val) {
+    var searchNode = function(node, val) {
       if (node === null) {
         return false;
       }
-      if (node.value === value) {
+      if (node.val === val) {
         return node;
-      } else if (value < node.value) {
-        return searchNode(node.left, value);
-      } else if (value > node.value) {
-        return searchNode(node.right, value);
+      } else if (val < node.val) {
+        return searchNode(node.left, val);
+      } else if (val > node.val) {
+        return searchNode(node.right, val);
       }
     };
-    return searchNode(this.root, value);
+    return searchNode(this.root, val);
   },
   isEmpty: function() {
     return this.root === null;
@@ -183,14 +195,14 @@ BinarySearchTree.prototype = {
       //console.log(level, h);
       // I attempted to print the tree indented, but this did not work 
       // correctly
-      //var indent = 40 + (40 * ((level) / h) - node.value.length * .5) * lr;
+      //var indent = 40 + (40 * ((level) / h) - node.val.length * .5) * lr;
       
       var indent = level;
       
       for (var i = 0; i < indent; i++) {
         output += " ";
       }
-      output += node.value + "\n";
+      output += node.val + "\n";
       
       // Queue children
       if (node.left !== null) {
@@ -201,7 +213,52 @@ BinarySearchTree.prototype = {
       }
     }
     return output;
-  }
+  },
+  
+  /**
+   * Helper that prints graphviz compatable output (cool!)
+   */
+  graphviz: function() {
+    //digraph BST {
+    //15 -> 6
+    //15 -> 18
+    //18 -> 17
+    //}
+    
+    var template = "digraph BST { {{DATA}} }";
+    var data_points = [];
+    var queue = [];
+    var null_count = 0;
+    if ( ! this.isEmpty()) {
+      //data_points.push("Tree -> " + this.root.val);
+      queue.push(this.root);
+      var node;
+      while (node = queue.shift()) {
+        var label = [
+              node.val, 
+            ].join(" ");
+        data_points.push(node.val + " [label=\"" + label + "\" ];");
+        if (node.left) {
+          data_points.push(node.val + " -> " + node.left.val + ";");
+          queue.push(node.left);
+        } else {
+          data_points.push("null" + null_count + " [shape=point];")
+          data_points.push(node.val + " -> null" + null_count + ";");
+          null_count = null_count + 1;
+        }
+        if (node.right) {
+          data_points.push(node.val + " -> " + node.right.val + ";");
+          queue.push(node.right);
+        } else {
+          data_points.push("null" + null_count + " [shape=point];")
+          data_points.push(node.val + " -> null" + null_count + ";");
+          null_count = null_count + 1;
+        }
+      }
+    }
+    var output = template.replace("{{DATA}}", data_points.join(" "));
+    return output;
+  },
   
 };
 
@@ -235,7 +292,7 @@ assert(bst.height() === 0);
 bst.insert('foo');
 
 assert(bst.isEmpty() === false);
-assert(bst.root.value == 'foo');
+assert(bst.root.true == 'foo');
 assert(bst.height() === 1);
 assert(bst.search('foo') !== false);
 assert(bst.search('asdf') === false);
@@ -247,11 +304,16 @@ bst.insert('Barney');
 bst.insert('Chris');
 bst.insert('Alexia');
 
+console.log(bst.graphviz());
+
 console.log(bst.toString());
 
 //bst.remove('foo');
 
-bst.remove('Barney');
+bst.remove('foo');
+
+console.log(bst.graphviz());
+
 console.log(bst.toString());
 //JSON.stringify(bst, null, 2)
 
