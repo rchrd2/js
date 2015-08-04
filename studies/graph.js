@@ -49,6 +49,10 @@ Vertex.prototype.contains = function(vertex) {
   return this.edges.indexOf(vertex) >= 0;
 };
 
+Vertex.prototype.getEdges = function() {
+  return this.edges;
+};
+
 
 /**
  * @constructor
@@ -137,10 +141,40 @@ Graph.prototype.isEmpty = function() {
 
 /**
  * Breadth First Search
- * @param {Vertex} vertex The starting vertex
+ *
+ * This is a basic breadth first search. I think normally breadth first search
+ * would be part of another method, like find shorted path, for example.
+ *
+ * In it's most basic sense it's pretty simple. You traverse the graph with a
+ * queue, and you only queue up items that haven't been visited. You keep track
+ * of those in a dictionary.
+ *
+ * @param {Vertex} startVertex The starting vertex
+ * @param {Vertex} targetVertex The starting vertex
+ * @return {Boolean) if a connection was found
  */
-Graph.prototype.breadthFirstSearch = function(vertex) {
-  
+Graph.prototype.breadthFirstSearch = function(startVertex, targetVertex) {
+  if ( ! (startVertex instanceof Vertex) || ! (targetVertex instanceof Vertex)) {
+    throw "A vertex was not passed to breadthFirstSearch";
+  }
+  var visited = {};
+  var found = false;
+  var queue = [startVertex];
+  var edges, vertex;
+  while (vertex = queue.shift()) {
+    if (vertex === targetVertex) {
+      found = true;
+      break;
+    }
+    visited[vertex.key] = true;
+    var edges = vertex.getEdges();
+    for (var i = 0; i < edges.length; i++) {
+      if (edges[i].key in visited === false) {
+        queue.push(edges[i]);
+      }
+    }
+  }
+  return found;
 };
 
 /**
@@ -223,7 +257,7 @@ var tests = {
     console.assert(v1.contains(v3), "v1 still has v3 as edge");
   },
   
-  test_to_graphviz: function() {
+  get_example_graph: function() {
     var g = new Graph();
     var a = g.addVertex(new Vertex('a'));
     var s = g.addVertex(new Vertex('s'));
@@ -260,8 +294,20 @@ var tests = {
 
     g.addEdge(v, c);
     g.addEdge(v, f);
-
+    return g;
+  },
+  
+  test_to_graphviz: function() {
+    var g = this.get_example_graph();
     console.log(g.toGraphviz());
+  },
+  
+  test_bfs: function() {
+    var g = this.get_example_graph();
+    var a = g.getVertex('a');
+    var f = g.getVertex('f');
+    var found = g.breadthFirstSearch(a, f);
+    console.assert(found === true, "Assert found a path");
   },
   
   run: function() {
@@ -269,6 +315,7 @@ var tests = {
     this.test_add_vertex();
     this.test_remove_vertex();
     this.test_to_graphviz();
+    this.test_bfs();
   },
 };
 
