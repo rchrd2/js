@@ -455,13 +455,14 @@ AvlTree.prototype = {
         node.parent.attachLeft(node.detachRight());
       } else {
         newRoot = node.detachRight();
+        console.log(newRoot);
       }
       node.detach();
     }
     if (newRoot == node) {
       newRoot = null;
     }
-    console.log('removeMin', String(node));
+    console.log('removeMin', String(newRoot), String(node));
     return [ newRoot, node ];
   },
   
