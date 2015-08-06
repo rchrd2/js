@@ -96,7 +96,11 @@ Graph.prototype.removeVertex = function(vertex) {
  * @param {Vertex} v2
  */
 Graph.prototype.addEdge = function(v1, v2) {
+  if ( ! (v1 instanceof Vertex) || ! (v2 instanceof Vertex)) {
+    throw "A vertex was not passed to addEdge";
+  }
   v1.addEdge(v2);
+  // Add vertex is a no-op if they are already in the graph
   this.addVertex(v1)
   this.addVertex(v2);
 };
@@ -176,6 +180,183 @@ Graph.prototype.breadthFirstSearch = function(startVertex, targetVertex) {
   }
   return found;
 };
+
+/**
+ * Depth First Search explores all Vertices and Edges
+ * This simply returns the names of the vertices in the order they
+ * were explored
+ *
+ * @return {Array<String>} visited
+ */
+Graph.prototype.depthFirstSearch = function() {
+  var parents = {};
+  var order = [];
+
+  // Search from start vertex s (only see stuff reachable from s)
+  var DFS_visit = function(vertex) {
+    for (var i = 0; i < vertex.edges.length; i++) {
+      var v = vertex.edges[i];
+      if (v.key in parents === false) {
+        parents[v.key] = vertex;
+        DFS_visit(v);
+      }
+    }
+    order.push(vertex.key);
+  }
+  
+  var DFS = function(g) {
+    var vertex, vertex_key;
+    for (vertex_key in g.vertices) {
+      if (vertex_key in parents === false) {
+        parents[vertex_key] = null;
+        vertex = g.vertices[vertex_key];
+        DFS_visit(vertex, parents);
+      }
+    }
+  };
+  
+  DFS(this);
+  
+  return order.reverse();
+};
+
+
+/**
+ * Depth First Search explores all Vertices and Edges
+ *
+ * This version is implemented Iteratively instead of recursively
+ *
+ * @note DOES NOT WORK
+ * @return {Array<String>} visited
+ */
+Graph.prototype.depthFirstSearchIter = function() {
+  var visited = {};
+  var output = [];
+  
+  // Note, using an array bases stack adds the cost of slicing
+  // A more efficient approach would be to use a linked-list based stack
+  var stack = [];
+  var vertex, vertex_key;
+  
+  for (vertex_key in this.vertices) {
+    stack.push(this.vertices[vertex_key]);
+
+    while (vertex = stack.pop()) {
+      // note this doesn't give a correct order
+      output.push(vertex_key);
+
+      if ((vertex.key in visited) === false) {
+        console.log(vertex.key);
+        visited[vertex.key] = true;
+        for (var j = 0; j < vertex.edges.length; j++) {
+          stack.push(vertex.edges[j]);
+        }
+      }
+    }
+  }
+  
+  return output;
+};
+
+
+
+/**
+ * Sort a DAG (Directed Acyclic Graph) in order of dependancies
+ *
+ * Uses a depth first search-based algorithm
+ *
+ * Sorting vertices in a graph
+ */
+Graph.prototype.topologicalSort = function() {
+  return this.depthFirstSearch().reverse();
+};
+
+Graph.prototype.topologicalSortIter = function() {
+  return this.depthFirstSearchIter().reverse();
+};
+
+
+/**
+ * Dijkstra
+ *
+ * A greedy algorithm.
+ *
+ * This graph implementation doesn't have weights in the edges, so this
+ * implementation is a bit trivial. All edges have the same weight.
+ * Even still, it'll still find the shortest path between two vertexes
+ */
+Graph.prototype.dijkstra = function(s) {
+  // Initialization
+  
+  // d holds minimum distances from
+  var d = {};
+  var Q = new MiniHeap();
+
+  // add the rest of the vertexes to there
+  var vertex_key;
+  for (vertex_key in this.vertices) {
+    // Use JavaScript's Infinity to represent Infinity
+    d[vertex_key] = Infinity;
+    Q.addWithPriority(this.vertices[vertex_key], d[vertex_key])
+  }
+
+  // the start vertex has min distance of 0;
+  d[s.key] = 0;
+  Q.decreasePriority(s, 0);
+
+  // Heart of the algorithm
+  var u;
+  while (Q.isEmpty() === false) {
+    u = Q.extractMin();
+    for (var j = 0; j < u.edges.length; j++) {
+      // v is the neighbor vertex
+      var v = u.edges[j];
+      var weight_from_u_to_v = 1; // a constant in this graph
+      if (d[v.key] > (d[u.key] + weight_from_u_to_v)) {
+        d[v.key] = d[u.key] + weight_from_u_to_v;
+        Q.decreasePriority(v, d[v.key]);
+      }
+    }
+  }
+  
+  return d;
+};
+
+// Helper faux Min-heap
+var MiniHeap = function() {
+  this.data = [];
+};
+MiniHeap.prototype.addWithPriority = function(v, dist) {
+  this.data.push([v, dist]);
+};
+MiniHeap.prototype.decreasePriority = function(v, alt) {
+  for (var i = 0; i < this.data.length; i++) {
+    if (this.data[i][0].key == v.key) {
+      this.data[i][1] = alt;
+      break;
+    };
+  };
+};
+MiniHeap.prototype.extractMin = function() {
+  var idx = null;
+  var min = null;
+  var v = null;
+  for (var i = 0; i < this.data.length; i++) {
+    if (min === null || this.data[i][1] < min) {
+      min = this.data[i][1];
+      idx = i;
+    };
+  };
+  if (idx !== null) {
+    v = this.data[idx][0];
+    this.data.splice(idx, 1);
+  };
+  return v;
+};
+MiniHeap.prototype.isEmpty = function() {
+  return this.data.length === 0;
+};
+
 
 /**
  * @return {String} graphviz source code
@@ -310,12 +491,81 @@ var tests = {
     console.assert(found === true, "Assert found a path");
   },
   
+  test_dfs: function() {
+    var g = this.get_example_graph();
+    var output = g.depthFirstSearch();
+    var expected = [ 'a', 'z', 's', 'x', 'd', 'f', 'c', 'v' ];
+    console.assert(expected.toString() === output.toString(), "Assert depth first search order", g.toGraphviz(), output);
+  },
+  
+  get_topological_graph: function() {
+    // This graph is the same DAG drawn on the whiteboard
+    // Of Lecture 14, of 6006 Mit Open Courseware ~45:00min
+    var graph = new Graph();
+    var a = graph.addVertex(new Vertex('a'));
+    var b = graph.addVertex(new Vertex('b'));
+    var c = graph.addVertex(new Vertex('c'));
+    var d = graph.addVertex(new Vertex('d'));
+    var e = graph.addVertex(new Vertex('e'));
+    var f = graph.addVertex(new Vertex('f'));
+    var g = graph.addVertex(new Vertex('g'));
+    var h = graph.addVertex(new Vertex('h'));
+    var i = graph.addVertex(new Vertex('i'));
+
+    graph.addEdge(g, h);
+    graph.addEdge(a, h);
+    graph.addEdge(a, b);
+    graph.addEdge(b, c);
+    graph.addEdge(d, c);
+    graph.addEdge(d, e);
+    graph.addEdge(c, f);
+    graph.addEdge(e, f);
+    return graph;
+  },
+  
+  test_topological_sort: function() {
+    var graph = this.get_topological_graph();
+    var output = graph.topologicalSort();
+    var expected;
+    // this is from the notes
+    expected = [ 'f', 'c', 'b', 'a', 'e', 'd', 'h', 'g', 'i' ];
+    // this is from my output, but it worked!
+    expected = [ 'h', 'f', 'c', 'b', 'a', 'e', 'd', 'g', 'i' ];
+    console.assert(expected.toString() === output.toString(), "Assert topological sort worked", output, graph.toGraphviz());
+  },
+
+  test_topological_sort_iter: function() {
+    var graph = this.get_topological_graph();
+    var output = graph.topologicalSortIter();
+    var expected;
+    // this is from the notes
+    expected = [ 'f', 'c', 'b', 'a', 'e', 'd', 'h', 'g', 'i' ];
+    // this is from my output, but it worked!
+    expected = [ 'h', 'f', 'c', 'b', 'a', 'e', 'd', 'g', 'i' ];
+    console.assert(expected.toString() === output.toString(), "Assert topological sort iter worked", graph.toGraphviz(), output);
+  },
+  
+  test_dijkstra: function() {
+    var graph = this.get_example_graph();
+    var a = graph.getVertex('a');
+    console.log('Running dijkstra');
+    console.log(graph.toGraphviz());
+    console.log(graph.dijkstra(a));
+    var result = graph.dijkstra(a);
+    var expected = { a: 0, s: 1, d: 3, f: 4, z: 1, x: 2, c: 3, v: 4 };
+    console.assert(result.toString() === expected.toString(), "Assert dijkstra worked", result);
+  },
+  
   run: function() {
     this.test_vertex_add_remove_edge();
     this.test_add_vertex();
     this.test_remove_vertex();
     this.test_to_graphviz();
     this.test_bfs();
+    this.test_dfs();
+    this.test_topological_sort();
+    //this.test_topological_sort_iter();
+    this.test_dijkstra();
   },
 };
 
