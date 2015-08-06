@@ -284,12 +284,22 @@ Graph.prototype.topologicalSortIter = function() {
  * This graph implementation doesn't have weights in the edges, so this
  * implementation is a bit trivial. All edges have the same weight.
  * Even still, it'll still find the shortest path between two vertexes
+ *
+ * It doesn't get a path from point A to B as one might expect. It instead
+ * returns the shortest paths from A to any Point. There are variants of this
+ * algorithm that are for Point A to B.
+ *
+ * @param {Vertex} s The start vertex
+ * @return {Array<Array>} return all the distances from A 
+ *                        and the tree representation
  */
 Graph.prototype.dijkstra = function(s) {
   // Initialization
   
   // d holds minimum distances from
   var d = {};
+  // prev is the tree representation of the graph
+  var prev = {};
   var Q = new MiniHeap();
 
   // add the rest of the vertexes to there
@@ -297,6 +307,7 @@ Graph.prototype.dijkstra = function(s) {
   for (vertex_key in this.vertices) {
     // Use JavaScript's Infinity to represent Infinity
     d[vertex_key] = Infinity;
+    prev[vertex_key] = null;
     Q.addWithPriority(this.vertices[vertex_key], d[vertex_key])
   }
 
@@ -314,12 +325,13 @@ Graph.prototype.dijkstra = function(s) {
       var weight_from_u_to_v = 1; // a constant in this graph
       if (d[v.key] > (d[u.key] + weight_from_u_to_v)) {
         d[v.key] = d[u.key] + weight_from_u_to_v;
+        prev[v.key] = u.key;
         Q.decreasePriority(v, d[v.key]);
       }
     }
   }
   
-  return d;
+  return [d, prev];
 };
 
 // Helper faux Min-heap
@@ -552,7 +564,10 @@ var tests = {
     console.log(graph.toGraphviz());
     console.log(graph.dijkstra(a));
     var result = graph.dijkstra(a);
-    var expected = { a: 0, s: 1, d: 3, f: 4, z: 1, x: 2, c: 3, v: 4 };
+    var expected = [ 
+        { a: 0, s: 1, d: 3, f: 4, z: 1, x: 2, c: 3, v: 4 },
+        { a: null, s: 'a', d: 'x', f: 'd', z: 'a', x: 's', c: 'x', v: 'c' }
+      ];
     console.assert(result.toString() === expected.toString(), "Assert dijkstra worked", result);
   },
   
