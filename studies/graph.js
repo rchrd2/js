@@ -283,7 +283,7 @@ Graph.prototype.topologicalSortIter = function() {
  *
  * This graph implementation doesn't have weights in the edges, so this
  * implementation is a bit trivial. All edges have the same weight.
- * Even still, it'll still find the shortest path between two vertexes
+ * Even still, it'll still find the shortest path between two vertices
  *
  * It doesn't get a path from point A to B as one might expect. It instead
  * returns the shortest paths from A to any Point. There are variants of this
@@ -302,7 +302,7 @@ Graph.prototype.dijkstra = function(s) {
   var prev = {};
   var Q = new MiniHeap();
 
-  // add the rest of the vertexes to there
+  // add the rest of the vertices to there
   var vertex_key;
   for (vertex_key in this.vertices) {
     // Use JavaScript's Infinity to represent Infinity
@@ -367,6 +367,76 @@ MiniHeap.prototype.extractMin = function() {
 };
 MiniHeap.prototype.isEmpty = function() {
   return this.data.length === 0;
+};
+
+/**
+ * Bellman-Ford
+ *
+ * Bellman-Ford is a general shortest path algorithm that works with 
+ * negative weights.
+ *
+ * It is a dynamic-programming-like algorithm, created by the inventor of
+ * dynamic programming, Richard Bellman. It uses a brute-force approach.
+ *
+ * Worst Case Performance O(|V|*|E|)
+ */
+Graph.prototype.bellmanFord = function(s) {
+  // Initialize
+
+  // d holds minimum distances from
+  var d = {};
+  // pi holds the predecessor
+  var pi = {};
+
+  for (var vertex_key in this.vertices) {
+    d[vertex_key] = Infinity;
+    pi[vertex_key] = null;
+  }
+
+  d[s.key] = 0;
+
+  var vertex_key, u, v;
+
+  // We assume all weights are 1 in this implementation
+  var weight = 1;
+  
+  var vertex_keys = Object.keys(this.vertices); 
+  for (var i = 0; i < vertex_keys.length - 1; i++) {
+
+    // for each edge (u,v) in the set E
+    // Iterate over ALL edges in the graph
+    // The way my Adj List is setup, i need a double loop
+
+    for (vertex_key in this.vertices) {
+      u = this.vertices[vertex_key];
+      for (var j = 0; j < u.edges.length; j++) {
+        // RELAX (u, v)
+        v = u.edges[j];
+        if (d[v.key] > d[u.key] + weight) {
+          // update weight
+          d[v.key] = d[u.key] + weight;
+          // update predecessor
+          pi[v.key] = u.key;
+        }
+      }
+    }
+  }
+  
+  // Check for negative-weight cycles 
+  // Runs one more pass, if a value decreased, it was a negative weight cycle,
+  // because the shortest path should have been found after N - 1 passes
+
+  for (vertex_key in this.vertices) {
+    u = this.vertices[vertex_key];
+    for (var j = 0; j < u.edges.length; j++) {
+      v = u.edges[j];
+      if (d[v.key] > d[u] + weight) {
+        throw "Negative weight cycle encountered :(";
+      }
+    }
+  }
+  
+  return [d, pi];
 };
 
 
@@ -571,6 +641,21 @@ var tests = {
     console.assert(result.toString() === expected.toString(), "Assert dijkstra worked", result);
   },
   
+  test_bellman_ford: function() {
+    var graph = this.get_example_graph();
+    var a = graph.getVertex('a');
+    console.log('Running bellmanFord');
+    console.log(graph.toGraphviz());
+    console.log(graph.bellmanFord(a));
+    var result = graph.bellmanFord(a);
+    var expected = [ 
+        { a: 0, s: 1, d: 3, f: 4, z: 1, x: 2, c: 3, v: 4 },
+        { a: null, s: 'a', d: 'x', f: 'd', z: 'a', x: 's', c: 'x', v: 'c' }
+      ];
+    console.assert(result.toString() === expected.toString(), "Assert bellmanFord worked", result);
+  },
+  
+  
   run: function() {
     this.test_vertex_add_remove_edge();
     this.test_add_vertex();
@@ -581,6 +666,7 @@ var tests = {
     this.test_topological_sort();
     //this.test_topological_sort_iter();
     this.test_dijkstra();
+    this.test_bellman_ford();
   },
 };
 
