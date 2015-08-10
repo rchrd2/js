@@ -210,7 +210,7 @@ Graph.prototype.depthFirstSearch = function() {
       if (vertex_key in parents === false) {
         parents[vertex_key] = null;
         vertex = g.vertices[vertex_key];
-        DFS_visit(vertex, parents);
+        DFS_visit(vertex);
       }
     }
   };
@@ -288,6 +288,8 @@ Graph.prototype.topologicalSortIter = function() {
  * It doesn't get a path from point A to B as one might expect. It instead
  * returns the shortest paths from A to any Point. There are variants of this
  * algorithm that are for Point A to B.
+ *
+ * Worst Case Performance O(|E| + |V|log|V|)
  *
  * @param {Vertex} s The start vertex
  * @return {Array<Array>} return all the distances from A 
